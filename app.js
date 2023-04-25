@@ -9,13 +9,18 @@ const mongoose = require('mongoose')
 mongoose.set('strictQuery', false)
 
 const mongoUrl = config.MONGODB_URI
-mongoose.connect(mongoUrl)
-  .then(() => {
-    logger.info('Connected to MongoDB')
-  })
-  .catch((error) => {
-    logger.error('error connecting to MongoDB:', error.message)
-  })
+const connectDB = async () => {
+  await mongoose.connect(mongoUrl).then(
+    () => {
+      logger.info('Connected to database')
+    },
+    error => {
+      logger.error(`Connection error: ${error.stack}`)
+    }
+  )
+}
+
+connectDB().catch(error => console.error(error))
 
 app.use(cors())
 app.use(express.static('build'))
