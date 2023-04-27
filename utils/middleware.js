@@ -1,10 +1,30 @@
 const logger = require('./logger')
+const jwt = require('jsonwebtoken')
 
 const requestLogger = (request, response, next) => {
   logger.info('Method:', request.method)
   logger.info('Path:  ', request.path)
   logger.info('Body:  ', request.body)
   logger.info('---')
+  next()
+}
+
+const getTokenFrom = authorization => {
+  if (authorization && authorization.startsWith('Bearer ')) {
+    return authorization.replace('Bearer ', '')
+  }
+  return null
+}
+
+const tokenExtractor = (request, response, next) => {
+  const token = getTokenFrom(request.get('authorization'))
+  request.token = token
+  next()
+}
+
+const userExtractor = (request, response, next) => {
+  const decodedToken = jwt.verify(request.token, process.env.SECRET)
+  request.user = decodedToken.id
   next()
 }
 
@@ -19,6 +39,12 @@ const errorHandler = (error, request, response, next) => {
     return response.status(400).send({ error: 'malformatted id' })
   } else if (error.name === 'ValidationError') {
     return response.status(400).json({ error: error.message })
+  } else if (error.name ===  'JsonWebTokenError') {
+    return response.status(400).json({ error: error.message })
+  } else if (error.name === 'TokenExpiredError') {
+    return response.status(401).json({
+      error: 'token expired'
+    })
   }
 
   next(error)
@@ -26,6 +52,8 @@ const errorHandler = (error, request, response, next) => {
 
 module.exports = {
   requestLogger,
+  tokenExtractor,
+  userExtractor,
   unknownEndpoint,
   errorHandler
 }
