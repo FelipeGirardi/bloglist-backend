@@ -54,7 +54,7 @@ blogsRouter.put('/:id', async (request, response) => {
     { new: true, runValidators: true, context: 'query' }
   )
 
-  response.status(204).json(updatedBlogResponse)
+  return response.status(201).json(updatedBlogResponse)
 })
 
 blogsRouter.delete('/:id', middleware.userExtractor, async (request, response) => {
